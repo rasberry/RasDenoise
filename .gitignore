@@ -293,5 +293,6 @@ __pycache__/
 
 # End of https://www.gitignore.io/api/csharp
 
-#exclude test images
+#exclude test files
 *.png
+*.bat

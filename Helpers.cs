@@ -39,6 +39,11 @@ namespace RasDenoise
 			return self;
 		}
 
+		public static bool EqualsIC(this string self, string check)
+		{
+			return self != null && check != null && self.Equals(check,StringComparison.CurrentCultureIgnoreCase);
+		}
+
 		//http://stackoverflow.com/questions/2961656/generic-tryparse
 		public delegate bool TryParseHandler<T>(string value, out T result);
 		public static bool TryParse<T>(string sval, string name, out T val, TryParseHandler<T> handler) where T : struct

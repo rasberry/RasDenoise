@@ -74,8 +74,7 @@ namespace RasDenoise
 
 		//Followed this source code mostly
 		//https://github.com/opencv-java/fourier-transform/blob/master/src/it/polito/teaching/cv/FourierController.java
-
-		public static void FFTForward(string src, string dst)
+		public static void DFTForward(string src, string dst)
 		{
 			var imgSrc = CvInvoke.Imread(src,LoadImageType.Grayscale);
 
@@ -84,20 +83,19 @@ namespace RasDenoise
 			int ydftsz = CvInvoke.GetOptimalDFTSize(imgSrc.Cols);
 
 			//pad input image to optimal dimensions
-			var imgPad = new Mat();
-			CvInvoke.CopyMakeBorder(imgSrc,imgPad,
+			CvInvoke.CopyMakeBorder(imgSrc,imgSrc,
 				0,xdftsz - imgSrc.Rows,0,ydftsz - imgSrc.Cols,
 				BorderType.Constant,new MCvScalar(0)
 			);
-			imgPad.PrintInfo();
+			imgSrc.PrintInfo();
 
 			//use 32F format for calcs
-			imgPad.ConvertTo(imgPad,DepthType.Cv32F);
-			imgPad.PrintInfo();
+			imgSrc.ConvertTo(imgSrc,DepthType.Cv32F);
+			imgSrc.PrintInfo();
 			//create a 2 channel mat using the input as the fist channel
 			var planes = new VectorOfMat();
-			planes.Push(imgPad);
-			planes.Push(new Mat(imgPad.Size,DepthType.Cv32F,1));
+			planes.Push(imgSrc);
+			planes.Push(new Mat(imgSrc.Size,DepthType.Cv32F,1));
 			Mat complex = new Mat();
 			CvInvoke.Merge(planes,complex);
 			complex.PrintInfo();
@@ -124,16 +122,80 @@ namespace RasDenoise
 			RearrangeQuadrants(mag);
 			RearrangeQuadrants(phs);
 
+			double magMax, magMin;
+			CvInvoke.MinMaxIdx(mag,out magMin,out magMax,null,null);
+			Console.WriteLine("mag range ["+magMin+","+magMax+"]");
+
+			double phsMax, phsMin;
+			CvInvoke.MinMaxIdx(phs,out phsMin,out phsMax,null,null);
+			Console.WriteLine("phs range ["+phsMin+","+phsMax+"]");
+
 			//convert to a 'normal' format and scale the data
-			mag.ConvertTo(mag,DepthType.Cv16U);
-			CvInvoke.Normalize(mag,mag,0,65535,NormType.MinMax,DepthType.Cv16U);
+			
+			Mat magOut = new Mat();
+			Mat phsOut = new Mat();
+			//mag.ConvertTo(mag,DepthType.Cv16U);
+			CvInvoke.Normalize(mag,magOut,0,65535,NormType.MinMax,DepthType.Cv16U);
 			phs.ConvertTo(phs,DepthType.Cv16U);
-			CvInvoke.Normalize(phs,phs,0,65535,NormType.MinMax,DepthType.Cv16U);
+			CvInvoke.Normalize(phs,phsOut,0,65535,NormType.MinMax,DepthType.Cv16U);
 
 			string name = Path.GetFileNameWithoutExtension(dst);
 
-			mag.Save(name+"-mag.png");
-			phs.Save(name+"-phs.png");
+			magOut.Save(name+"-mag.png");
+			phsOut.Save(name+"-phs.png");
+		}
+
+		public static void DFTInverse(IEnumerable<string> srcList, string dst)
+		{
+			string magName = null, phsName = null;
+			int index = 0;
+			foreach(string src in srcList) {
+				if (index == 0) { magName = src; }
+				if (index == 1) { phsName = src; }
+				index++;
+			}
+
+			var magSrc = CvInvoke.Imread(magName,LoadImageType.Grayscale);
+			var phsSrc = CvInvoke.Imread(phsName,LoadImageType.Grayscale);
+
+			magSrc.ConvertTo(magSrc,DepthType.Cv32F);
+			phsSrc.ConvertTo(phsSrc,DepthType.Cv32F);
+
+			//flip these back to original positions
+			RearrangeQuadrants(magSrc);
+			RearrangeQuadrants(phsSrc);
+
+			//de-log the magnitude data
+			CvInvoke.Exp(magSrc,magSrc);
+			Helpers.AddS(magSrc,-1.0,magSrc);
+
+			//back to real / imaginary from magnitude / phase
+			Mat real = new Mat();
+			Mat imag = new Mat();
+			CvInvoke.PolarToCart(magSrc,phsSrc,real,imag);
+
+			//merge real / imaginary into one complex Mat
+			var planes = new VectorOfMat();
+			planes.Push(real);
+			planes.Push(imag);
+			Mat complex = new Mat();
+			CvInvoke.Merge(planes,complex);
+			complex.PrintInfo();
+
+			//do the inverse fourrier transform
+			CvInvoke.Dft(complex,complex,DxtType.Inverse,0);
+			complex.PrintInfo();
+
+			//split into spatial / (empty)
+			var compos = new VectorOfMat(2);
+			CvInvoke.Split(complex,compos);
+
+			//the real part should contain the orignal data - we can throw away the imaginary part
+			Mat img = compos[0]; 
+			Mat imgOut = new Mat();
+			CvInvoke.Normalize(img,imgOut,0,65535,NormType.MinMax,DepthType.Cv16U);
+
+			imgOut.Save(dst);
 		}
 
 		static void RearrangeQuadrants(Mat image)
@@ -154,12 +216,6 @@ namespace RasDenoise
 			q1.CopyTo(tmp);
 			q2.CopyTo(q1);
 			tmp.CopyTo(q2);
-		}
-
-		public static void Test()
-		{
-			var x = new Emgu.CV.Superres.FrameSource(null,false);
-			var y = new Emgu.CV.Superres.SuperResolution(Emgu.CV.Superres.SuperResolution.OpticalFlowType.Btvl,x);
 		}
 	}
 }
