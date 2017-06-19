@@ -60,9 +60,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ComplexArray.cs" />
-    <Compile Include="Fft.cs" />
-    <Compile Include="FftTest.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="Methods.cs" />
     <Compile Include="Program.cs" />
