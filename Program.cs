@@ -113,8 +113,7 @@ namespace RasDenoise
 					.Append    ("  ").AppendWrap(2,"Decomposes an input image into frequency magnitude and phase components.")
 					.AppendLine()
 					.Append    ("  (input image)         ").AppendWrap(24,"Source image")
-					.Append    ("  -m [output image]     ").AppendWrap(24,"Output magnitude image")
-					.Append    ("  -p [output image]     ").AppendWrap(24,"Output phase image")
+					.Append    ("  -o [output image]     ").AppendWrap(24,"Output image (produces 2 files)")
 			;}
 			if (help == MethodType.Help || help == MethodType.DFTInverse) {
 				sb
@@ -170,6 +169,73 @@ namespace RasDenoise
 			for(int a=1; a<len; a++)
 			{
 				string c = args[a];
+				if (Method == MethodType.NlMeans) {
+					if (c == "-h" && ++a < len) {
+						if (!Helpers.TryParse(args[a],c,out m1h,double.TryParse)) { return false; }
+					} else if (c == "-t" && ++a < len) {
+						if (!Helpers.TryParse(args[a],c,out m1templateWindowSize,int.TryParse)) { return false; }
+					} else if (c == "-s" && ++a < len) {
+						if (!Helpers.TryParse(args[a],c,out m1searchWindowSize,int.TryParse)) { return false; }
+					} else {
+						fileList.Add(args[a]);
+					}
+				}
+				else if (Method == MethodType.NlMeansColored) {
+					if (c == "-h" && ++a < len) {
+						if (!Helpers.TryParse(args[a],c,out m2h,double.TryParse)) { return false; }
+					} else if (c == "-t" && ++a < len) {
+						if (!Helpers.TryParse(args[a],c,out m2templateWindowSize,int.TryParse)) { return false; }
+					} else if (c == "-s" && ++a < len) {
+						if (!Helpers.TryParse(args[a],c,out m2searchWindowSize,int.TryParse)) { return false; }
+					} else if (c == "-c" && ++a < len) {
+						if (!Helpers.TryParse(args[a],c,out m2hColor,double.TryParse)) { return false; }
+					} else {
+						fileList.Add(args[a]);
+					}
+				}
+				else if (Method == MethodType.Dct) {
+					if (c == "-s" && ++a < len) {
+						if (!Helpers.TryParse(args[a],c,out m3sigma,double.TryParse)) { return false; }
+					} else if (c == "-p" && ++a < len) {
+						if (!Helpers.TryParse(args[a],c,out m3psize,int.TryParse)) { return false; }
+					}
+				}
+				else if (Method == MethodType.TVL1) {
+					if (c == "-o" && ++a < len) {
+						outFile = args[a];
+					} else if (c == "-l" && ++a < len) {
+						if (!Helpers.TryParse(args[a],c,out m4lambda,double.TryParse)) { return false; }
+					} else if (c == "-n" && ++a < len) {
+						if (!Helpers.TryParse(args[a],c,out m4niters,int.TryParse)) { return false; }
+					} else {
+						fileList.Add(args[a]);
+					}
+				}
+				else if (Method == MethodType.DFTForward) {
+					if (c == "-o" && ++a < len) {
+						outFile = args[a];
+					} else {
+						fileList.Add(args[a]);
+					}
+				}
+				else if (Method == MethodType.DFTInverse) {
+					if (c == "-m" && ++a < len) {
+						if (fileList.Count < 1) {
+							fileList.Add(args[a]);
+						} else {
+							fileList[0] = args[a];
+						}
+					} else if (c == "-p" && ++a < len) {
+						if (fileList.Count < 1) {
+							fileList.Add(null);
+						}
+						fileList.Add(args[a]);
+					} else {
+						outFile = args[a];
+					}
+				}
+
+				#if false
 				if (c == "-h" && ++a < len) {
 					if (Method == MethodType.NlMeans) {
 						if (!Helpers.TryParse(args[a],c,out m1h,double.TryParse)) { return false; }
@@ -214,6 +280,7 @@ namespace RasDenoise
 				} else {
 					fileList.Add(args[a]);
 				}
+				#endif
 			}
 			return true;
 		}
@@ -235,7 +302,7 @@ namespace RasDenoise
 					outFile = fileList[1];
 				} else {
 					outFile = Path.GetFileNameWithoutExtension(inFile)
-						+".dn"+Path.GetExtension(inFile);
+						+".out"+Path.GetExtension(inFile);
 				}
 			}
 
@@ -265,9 +332,12 @@ namespace RasDenoise
 			}
 			else if (Method == MethodType.DFTForward) {
 				Methods.DFTForward(inFile,outFile);
-				return;
 			}
 			else if (Method == MethodType.DFTInverse) {
+				if (fileList.Count < 2 || fileList[0] == null || fileList[1] == null) {
+					Console.WriteLine("your must specify both a magnitude image and a phase image");
+					return;
+				}
 				Methods.DFTInverse(fileList,outFile);
 				return;
 			}

@@ -134,7 +134,7 @@ namespace RasDenoise
 			
 			Mat magOut = new Mat();
 			Mat phsOut = new Mat();
-			//mag.ConvertTo(mag,DepthType.Cv16U);
+
 			CvInvoke.Normalize(mag,magOut,0,65535,NormType.MinMax,DepthType.Cv16U);
 			phs.ConvertTo(phs,DepthType.Cv16U);
 			CvInvoke.Normalize(phs,phsOut,0,65535,NormType.MinMax,DepthType.Cv16U);
