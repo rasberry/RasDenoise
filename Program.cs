@@ -57,7 +57,7 @@ namespace RasDenoise
 			if (help >= MethodType.Help) {
 				sb
 					.AppendLine()
-					.AppendLine("  Additional Information:")
+					.AppendLine(" Additional Information:")
 				;
 			if (help == MethodType.Help || help == MethodType.NlMeans) {
 				sb
