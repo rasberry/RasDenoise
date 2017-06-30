@@ -132,7 +132,6 @@ namespace RasDenoise
 			CvInvoke.MinMaxIdx(phs,out phsMin,out phsMax,null,null);
 
 			//convert to a 'normal' format and scale the data
-			
 			Mat magOut = new Mat();
 			Mat phsOut = new Mat();
 

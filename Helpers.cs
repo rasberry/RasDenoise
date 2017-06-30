@@ -28,14 +28,14 @@ namespace RasDenoise
 					c += w;
 					self.Append(o).AppendLine(s);
 				}
-				//were in the middle
+				//we're in the middle
 				else {
 					string s = m.Substring(c,w);
 					c += w;
 					self.Append(o).AppendLine(s);
 				}
 			}
-			//StringBuilder like to chain
+			//StringBuilder likes to chain
 			return self;
 		}
 
@@ -66,6 +66,7 @@ namespace RasDenoise
 			return worked;
 		}
 
+		#if false
 		public static T GetValue<T>(this Mat mat, int row, int col)
 		{
 			var buffer = new byte[mat.ElementSize];
@@ -170,6 +171,7 @@ namespace RasDenoise
 			}
 			return buffer;
 		}
+		#endif
 
 		#if false
 		public static dynamic GetValue(this Mat mat, int row, int col)
@@ -223,7 +225,6 @@ namespace RasDenoise
 			}
 			return new float[1];
 		}
-		#endif
 
 		public static double BytesToDouble(byte[] bytes)
 		{
@@ -246,6 +247,7 @@ namespace RasDenoise
 
 			throw new NotSupportedException("Unsupported length "+bytes.Length);
 		}
+		#endif
 
 		public static void PrintInfo(this Mat self, string name = null)
 		{
@@ -262,18 +264,6 @@ namespace RasDenoise
 				+"\n\tMax="+max
 			);
 		}
-
-		////Don't know why this isn't exposed .. cv::Magnitude
-		////ah ha! -- cartToPolar does this
-		//public static void Magnitude(IInputArray x,IInputArray y, IOutputArray magnitude)
-		//{
-		//	Mat xpow = new Mat();
-		//	Mat ypow = new Mat();
-		//
-		//	CvInvoke.Pow(x,2.0,xpow);
-		//	CvInvoke.Pow(y,2.0,ypow);
-		//	CvInvoke.Add(xpow,ypow,magnitude);
-		//}
 
 		//Not sure why cv:AddS went away
 		public static void AddS(Mat input, double amount, IOutputArray output)

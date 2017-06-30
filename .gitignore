@@ -296,3 +296,7 @@ __pycache__/
 #exclude test files
 *.png
 *.bat
+
+#exclude files added by nuget packages
+License-LGPL.txt
+OpenTK.dll.config
