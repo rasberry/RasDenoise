@@ -249,11 +249,17 @@ namespace RasDenoise
 
 		public static void PrintInfo(this Mat self, string name = null)
 		{
+			double min,max;
+			CvInvoke.MinMaxIdx(self,out min,out max,null,null);
+
 			Console.WriteLine("Mat: " + (name == null ? "" : name)
 				+"\n\tDepth="+self.Depth
+				+"\n\tChannels="+self.NumberOfChannels
 				+"\n\tSize="+self.Size.Width+"x"+self.Size.Height
 				+"\n\tDims="+self.Dims
 				+"\n\tElementSize="+self.ElementSize
+				+"\n\tMin="+min
+				+"\n\tMax="+max
 			);
 		}
 

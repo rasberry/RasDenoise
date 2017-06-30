@@ -118,12 +118,16 @@ namespace RasDenoise
 			if (help == MethodType.Help || help == MethodType.DFTInverse) {
 				sb
 					.AppendLine()
-					.AppendLine("  [5] DFTInverse")
+					.AppendLine("  [6] DFTInverse")
 					.Append    ("  ").AppendWrap(2,"Recomposes an image from frequency magnitude and phase components.")
 					.AppendLine()
-					.Append    ("  (output image)       ").AppendWrap(24,"Output image")
+					.Append    ("  [output image]       ").AppendWrap(24,"Output image")
 					.Append    ("  -m (input image)     ").AppendWrap(24,"Input magnitude image")
 					.Append    ("  -p (input image)     ").AppendWrap(24,"Input phase image")
+					.Append    ("  -mi (number)         ").AppendWrap(24,"magnitude range min")
+					.Append    ("  -mx (number)         ").AppendWrap(24,"magnitude range max")
+					.Append    ("  -pi (number)         ").AppendWrap(24,"phase range min")
+					.Append    ("  -px (number)         ").AppendWrap(24,"phase range max")
 			;}
 			}
 
@@ -145,6 +149,10 @@ namespace RasDenoise
 		static int     m3psize = 16;
 		static double? m4lambda;
 		static int?    m4niters;
+		static double? m6mi;
+		static double? m6mx;
+		static double? m6pi;
+		static double? m6px;
 
 		static bool ParseArgs(string[] args)
 		{
@@ -230,57 +238,18 @@ namespace RasDenoise
 							fileList.Add(null);
 						}
 						fileList.Add(args[a]);
+					} else if (c == "-mi" && ++a < len) {
+						if (!Helpers.TryParse(args[a],c,out m6mi, double.TryParse)) { return false; }
+					} else if (c == "-mx" && ++a < len) {
+						if (!Helpers.TryParse(args[a],c,out m6mx, double.TryParse)) { return false; }
+					} else if (c == "-pi" && ++a < len) {
+						if (!Helpers.TryParse(args[a],c,out m6pi, double.TryParse)) { return false; }
+					} else if (c == "-px" && ++a < len) {
+						if (!Helpers.TryParse(args[a],c,out m6px, double.TryParse)) { return false; }
 					} else {
 						outFile = args[a];
 					}
 				}
-
-				#if false
-				if (c == "-h" && ++a < len) {
-					if (Method == MethodType.NlMeans) {
-						if (!Helpers.TryParse(args[a],c,out m1h,double.TryParse)) { return false; }
-					} else if (Method == MethodType.NlMeansColored) {
-						if (!Helpers.TryParse(args[a],c,out m2h,double.TryParse)) { return false; }
-					}
-				}
-				else if (c == "-t" && ++a < len) {
-					if (Method == MethodType.NlMeans) {
-						if (!Helpers.TryParse(args[a],c,out m1templateWindowSize,int.TryParse)) { return false; }
-					} else if (Method == MethodType.NlMeansColored) {
-						if (!Helpers.TryParse(args[a],c,out m2templateWindowSize,int.TryParse)) { return false; }
-					}
-				} else if (c == "-s" && ++a < len) {
-					if (Method == MethodType.NlMeans) {
-						if (!Helpers.TryParse(args[a],c,out m1searchWindowSize,int.TryParse)) { return false; }
-					} else if (Method == MethodType.NlMeansColored) {
-						if (!Helpers.TryParse(args[a],c,out m2searchWindowSize,int.TryParse)) { return false; }
-					} else if (Method == MethodType.Dct) {
-						if (!Helpers.TryParse(args[a],c,out m3sigma,double.TryParse)) { return false; }
-					}
-				} else if (c == "-c" && ++a < len) {
-					if (Method == MethodType.NlMeansColored) {
-						if (!Helpers.TryParse(args[a],c,out m2hColor,double.TryParse)) { return false; }
-					}
-				} else if (c == "-p" && ++a < len) {
-					if (Method == MethodType.Dct) {
-						if (!Helpers.TryParse(args[a],c,out m3psize,int.TryParse)) { return false; }
-					}
-				} else if (c == "-o" && ++a < len) {
-					if (Method == MethodType.TVL1) {
-						outFile = args[a];
-					}
-				} else if (c == "-l" && ++a < len) {
-					if (Method == MethodType.TVL1) {
-						if (!Helpers.TryParse(args[a],c,out m4lambda,double.TryParse)) { return false; }
-					}
-				} else if (c == "-n" && ++a < len) {
-					if (Method == MethodType.TVL1) {
-						if (!Helpers.TryParse(args[a],c,out m4niters,int.TryParse)) { return false; }
-					}
-				} else {
-					fileList.Add(args[a]);
-				}
-				#endif
 			}
 			return true;
 		}
@@ -338,7 +307,24 @@ namespace RasDenoise
 					Console.WriteLine("your must specify both a magnitude image and a phase image");
 					return;
 				}
-				Methods.DFTInverse(fileList,outFile);
+				if (fileList.Count > 2) {
+					outFile = fileList[2];
+				} else {
+					outFile = Path.GetFileNameWithoutExtension(fileList[0])+".inv.png";
+				}
+
+				Debug.WriteLine("mi="+m6mi.GetValueOrDefault()
+					+" mx="+m6mx.GetValueOrDefault()
+					+" pi="+m6pi.GetValueOrDefault()
+					+" px="+m6px.GetValueOrDefault()
+				);
+
+				if (!m6mi.HasValue || !m6mx.HasValue || !m6pi.HasValue || !m6px.HasValue) {
+					Console.WriteLine("you must specify magnitude and phase ranges");
+					return;
+				}
+
+				Methods.DFTInverse(fileList,outFile,m6mi.Value,m6mx.Value,m6pi.Value,m6px.Value);
 				return;
 			}
 		}

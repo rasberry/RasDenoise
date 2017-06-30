@@ -76,7 +76,7 @@ namespace RasDenoise
 		//https://github.com/opencv-java/fourier-transform/blob/master/src/it/polito/teaching/cv/FourierController.java
 		public static void DFTForward(string src, string dst)
 		{
-			var imgSrc = CvInvoke.Imread(src,LoadImageType.Grayscale);
+			var imgSrc = CvInvoke.Imread(src,LoadImageType.Grayscale | LoadImageType.AnyDepth);
 
 			//get optimal dimensions (power of 2 i think..)
 			int xdftsz = CvInvoke.GetOptimalDFTSize(imgSrc.Rows);
@@ -87,22 +87,22 @@ namespace RasDenoise
 				0,xdftsz - imgSrc.Rows,0,ydftsz - imgSrc.Cols,
 				BorderType.Constant,new MCvScalar(0)
 			);
-			imgSrc.PrintInfo();
+			imgSrc.PrintInfo("1");
 
 			//use 32F format for calcs
 			imgSrc.ConvertTo(imgSrc,DepthType.Cv32F);
-			imgSrc.PrintInfo();
+			imgSrc.PrintInfo("2");
 			//create a 2 channel mat using the input as the fist channel
 			var planes = new VectorOfMat();
 			planes.Push(imgSrc);
 			planes.Push(new Mat(imgSrc.Size,DepthType.Cv32F,1));
 			Mat complex = new Mat();
 			CvInvoke.Merge(planes,complex);
-			complex.PrintInfo();
+			complex.PrintInfo("3");
 
 			//do the fourrier transform
 			CvInvoke.Dft(complex,complex,DxtType.Forward,0);
-			complex.PrintInfo();
+			complex.PrintInfo("4");
 
 			//split channels into real / imaginary
 			var compos = new VectorOfMat(2);
@@ -112,11 +112,13 @@ namespace RasDenoise
 			Mat mag = new Mat();
 			Mat phs = new Mat();
 			CvInvoke.CartToPolar(compos[0],compos[1],mag,phs);
+			mag.PrintInfo("5m");
 
 			//convert to log scale since magnitude tends to have a huge range
 			Helpers.AddS(mag,1.0,mag);
 			CvInvoke.Log(mag,mag);
-			mag.PrintInfo();
+			mag.PrintInfo("6m");
+			phs.PrintInfo("6p");
 
 			//regular DFT puts low frequencies in the corners - this flips them to the center
 			RearrangeQuadrants(mag);
@@ -124,11 +126,10 @@ namespace RasDenoise
 
 			double magMax, magMin;
 			CvInvoke.MinMaxIdx(mag,out magMin,out magMax,null,null);
-			Console.WriteLine("mag range ["+magMin+","+magMax+"]");
+			//Console.WriteLine("-mi "+magMin+","+magMax+"]");
 
 			double phsMax, phsMin;
 			CvInvoke.MinMaxIdx(phs,out phsMin,out phsMax,null,null);
-			Console.WriteLine("phs range ["+phsMin+","+phsMax+"]");
 
 			//convert to a 'normal' format and scale the data
 			
@@ -136,16 +137,20 @@ namespace RasDenoise
 			Mat phsOut = new Mat();
 
 			CvInvoke.Normalize(mag,magOut,0,65535,NormType.MinMax,DepthType.Cv16U);
-			phs.ConvertTo(phs,DepthType.Cv16U);
 			CvInvoke.Normalize(phs,phsOut,0,65535,NormType.MinMax,DepthType.Cv16U);
 
 			string name = Path.GetFileNameWithoutExtension(dst);
+
+			magOut.PrintInfo("7m");
+			phsOut.PrintInfo("7p");
+
+			Console.WriteLine("-mi " + magMin + " -mx " + magMax + " -pi " + phsMin + " -px " + phsMax);
 
 			magOut.Save(name+"-mag.png");
 			phsOut.Save(name+"-phs.png");
 		}
 
-		public static void DFTInverse(IEnumerable<string> srcList, string dst)
+		public static void DFTInverse(IEnumerable<string> srcList, string dst, double mi, double mx, double pi, double px)
 		{
 			string magName = null, phsName = null;
 			int index = 0;
@@ -155,24 +160,38 @@ namespace RasDenoise
 				index++;
 			}
 
-			var magSrc = CvInvoke.Imread(magName,LoadImageType.Grayscale);
-			var phsSrc = CvInvoke.Imread(phsName,LoadImageType.Grayscale);
+			var magSrc = CvInvoke.Imread(magName,LoadImageType.Grayscale | LoadImageType.AnyDepth);
+			var phsSrc = CvInvoke.Imread(phsName,LoadImageType.Grayscale | LoadImageType.AnyDepth);
 
-			magSrc.ConvertTo(magSrc,DepthType.Cv32F);
-			phsSrc.ConvertTo(phsSrc,DepthType.Cv32F);
+			magSrc.PrintInfo("1m");
+			phsSrc.PrintInfo("1p");
+
+			Mat mag = new Mat();
+			Mat phs = new Mat();
+
+			CvInvoke.Normalize(magSrc,mag,mi,mx,NormType.MinMax,DepthType.Cv32F);
+			CvInvoke.Normalize(phsSrc,phs,pi,px,NormType.MinMax,DepthType.Cv32F);
+
+			mag.PrintInfo("2m");
+			phs.PrintInfo("2p");
 
 			//flip these back to original positions
-			RearrangeQuadrants(magSrc);
-			RearrangeQuadrants(phsSrc);
+			RearrangeQuadrants(mag);
+			RearrangeQuadrants(phs);
 
 			//de-log the magnitude data
-			CvInvoke.Exp(magSrc,magSrc);
-			Helpers.AddS(magSrc,-1.0,magSrc);
+			CvInvoke.Exp(mag,mag);
+			Helpers.AddS(mag,-1.0,mag);
+
+			mag.PrintInfo("3m");
 
 			//back to real / imaginary from magnitude / phase
 			Mat real = new Mat();
 			Mat imag = new Mat();
-			CvInvoke.PolarToCart(magSrc,phsSrc,real,imag);
+			CvInvoke.PolarToCart(mag,phs,real,imag);
+
+			real.PrintInfo("4r");
+			imag.PrintInfo("4i");
 
 			//merge real / imaginary into one complex Mat
 			var planes = new VectorOfMat();
@@ -180,11 +199,11 @@ namespace RasDenoise
 			planes.Push(imag);
 			Mat complex = new Mat();
 			CvInvoke.Merge(planes,complex);
-			complex.PrintInfo();
+			complex.PrintInfo("5");
 
 			//do the inverse fourrier transform
 			CvInvoke.Dft(complex,complex,DxtType.Inverse,0);
-			complex.PrintInfo();
+			complex.PrintInfo("6");
 
 			//split into spatial / (empty)
 			var compos = new VectorOfMat(2);
