@@ -17,7 +17,7 @@ namespace RasDenoise
 		public static void NlMeans(string src, string dst, double h, int templateWindowSize, int searchWindowSize)
 		{
 			Console.WriteLine("Reading image "+src);
-			var imgData = CvInvoke.Imread(src,LoadImageType.AnyColor);
+			var imgData = CvInvoke.Imread(src,ImreadModes.AnyColor);
 			var outData = new Mat(imgData.Size,imgData.Depth,imgData.NumberOfChannels);
 
 			Console.WriteLine("Denoising using "+nameof(NlMeans));
@@ -30,7 +30,7 @@ namespace RasDenoise
 		public static void NlMeansColored(string src, string dst, double h, double hColor, int templateWindowSize, int searchWindowSize)
 		{
 			Console.WriteLine("Reading image "+src);
-			var imgData = CvInvoke.Imread(src,LoadImageType.AnyColor);
+			var imgData = CvInvoke.Imread(src,ImreadModes.AnyColor);
 			var outData = new Mat(imgData.Size,imgData.Depth,imgData.NumberOfChannels);
 
 			Console.WriteLine("Denoising using "+nameof(NlMeansColored));
@@ -43,7 +43,7 @@ namespace RasDenoise
 		public static void Dct(string src, string dst, double sigma, int psize)
 		{
 			Console.WriteLine("Reading image "+src);
-			var imgData = CvInvoke.Imread(src,LoadImageType.AnyColor);
+			var imgData = CvInvoke.Imread(src,ImreadModes.AnyColor);
 			var outData = new Mat();
 		
 			Console.WriteLine("Denoising using "+nameof(Dct));
@@ -59,7 +59,7 @@ namespace RasDenoise
 			foreach (string s in srcList)
 			{
 				Console.WriteLine("Reading image " + s);
-				var imgData = CvInvoke.Imread(s, LoadImageType.AnyColor);
+				var imgData = CvInvoke.Imread(s, ImreadModes.AnyColor);
 				observations.Add(imgData);
 			}
 			var outData = new Mat();
@@ -76,7 +76,7 @@ namespace RasDenoise
 		//https://github.com/opencv-java/fourier-transform/blob/master/src/it/polito/teaching/cv/FourierController.java
 		public static void DFTForward(string src, string dst)
 		{
-			var imgSrc = CvInvoke.Imread(src,LoadImageType.Grayscale | LoadImageType.AnyDepth);
+			var imgSrc = CvInvoke.Imread(src,ImreadModes.Grayscale | ImreadModes.AnyDepth);
 
 			//get optimal dimensions (power of 2 i think..)
 			int xdftsz = CvInvoke.GetOptimalDFTSize(imgSrc.Rows);
@@ -159,8 +159,8 @@ namespace RasDenoise
 				index++;
 			}
 
-			var magSrc = CvInvoke.Imread(magName,LoadImageType.Grayscale | LoadImageType.AnyDepth);
-			var phsSrc = CvInvoke.Imread(phsName,LoadImageType.Grayscale | LoadImageType.AnyDepth);
+			var magSrc = CvInvoke.Imread(magName,ImreadModes.Grayscale | ImreadModes.AnyDepth);
+			var phsSrc = CvInvoke.Imread(phsName,ImreadModes.Grayscale | ImreadModes.AnyDepth);
 
 			magSrc.PrintInfo("1m");
 			phsSrc.PrintInfo("1p");

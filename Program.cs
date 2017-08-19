@@ -15,6 +15,14 @@ namespace RasDenoise
 		static void Main(string[] args)
 		{
 			Debug.Listeners.Add(new ConsoleTraceListener());
+			AppDomain appCurr = AppDomain.CurrentDomain;
+			appCurr.AssemblyResolve += (object sender, ResolveEventArgs eventArgs) => {
+				Console.WriteLine("## "+eventArgs.Name);
+				return null;
+			};
+			appCurr.AssemblyLoad += (object sender, AssemblyLoadEventArgs eventArgs) => {
+				Console.WriteLine("!! "+eventArgs.LoadedAssembly.FullName);
+			};
 
 			if (args.Length < 1) {
 				Usage();
