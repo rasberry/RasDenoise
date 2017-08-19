@@ -296,6 +296,7 @@ __pycache__/
 #exclude test files
 *.png
 *.bat
+*.jp*
 
 #exclude files added by nuget packages
 License-LGPL.txt
