@@ -63,15 +63,16 @@
     <Compile Include="Methods.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="MethodArgs.cs" />
   </ItemGroup>
-  <ItemGroup>  
-    <AdditionalFiles Include="lib\libcvextern.so"/>  
+  <ItemGroup>
+    <AdditionalFiles Include="lib\libcvextern.so" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Target Name="AfterBuild">  
-      <Copy SourceFiles="@(AdditionalFiles)"  DestinationFolder="$(OutputPath)" />  
-  </Target> 
+  <Target Name="AfterBuild">
+    <Copy SourceFiles="@(AdditionalFiles)" DestinationFolder="$(OutputPath)" />
+  </Target>
 </Project>

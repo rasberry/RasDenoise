@@ -28,13 +28,13 @@ namespace RasDenoise
 				Usage();
 				return;
 			}
-			if (!ParseArgs(args)) {
+			if (!ParseMethod(args)) {
 				return;
 			}
 
 			//windows pops up a dialog on a crash - using try-catch to suppress that
 			try {
-				MainMain();
+				MainMain(args);
 			} catch(SEHException se) {
 				//SEHException is annoying .. not sure how to get the 'native' underlying crash information yet.
 				Console.Error.WriteLine(se.ToString());
@@ -142,27 +142,27 @@ namespace RasDenoise
 			Console.WriteLine(sb.ToString());
 		}
 
-		//options variables and their defaults
-		static List<string> fileList = new List<string>();
-		static string outFile = null;
 		static MethodType Method = MethodType.None;
-		static double  m1h = 3.0;
-		static int     m1templateWindowSize = 7;
-		static int     m1searchWindowSize = 21;
-		static double  m2h = 3.0;
-		static double  m2hColor = 3.0;
-		static int     m2templateWindowSize = 7;
-		static int     m2searchWindowSize = 21;
-		static double? m3sigma;
-		static int     m3psize = 16;
-		static double? m4lambda;
-		static int?    m4niters;
-		static double? m6mi;
-		static double? m6mx;
-		static double? m6pi;
-		static double? m6px;
+		//options variables and their defaults
+		//static List<string> fileList = new List<string>();
+		//static string outFile = null;
+		//static double  m1h = 3.0;
+		//static int     m1templateWindowSize = 7;
+		//static int     m1searchWindowSize = 21;
+		//static double  m2h = 3.0;
+		//static double  m2hColor = 3.0;
+		//static int     m2templateWindowSize = 7;
+		//static int     m2searchWindowSize = 21;
+		//static double? m3sigma;
+		//static int     m3psize = 16;
+		//static double? m4lambda;
+		//static int?    m4niters;
+		//static double? m6mi;
+		//static double? m6mx;
+		//static double? m6pi;
+		//static double? m6px;
 
-		static bool ParseArgs(string[] args)
+		static bool ParseMethod(string[] args)
 		{
 			string m = args[0];
 			if (m == "--help" || m == "/?" || m.EqualsIC("help") || m == "0") {
@@ -178,163 +178,89 @@ namespace RasDenoise
 
 			if (!Enum.TryParse(m,true,out Method)) {
 				Console.WriteLine("Bad method "+m);
-				return false;
+				return true;
 			}
 
-			int len = args.Length;
-			for(int a=1; a<len; a++)
-			{
-				string c = args[a];
-				if (Method == MethodType.NlMeans) {
-					if (c == "-h" && ++a < len) {
-						if (!Helpers.TryParse(args[a],c,out m1h,double.TryParse)) { return false; }
-					} else if (c == "-t" && ++a < len) {
-						if (!Helpers.TryParse(args[a],c,out m1templateWindowSize,int.TryParse)) { return false; }
-					} else if (c == "-s" && ++a < len) {
-						if (!Helpers.TryParse(args[a],c,out m1searchWindowSize,int.TryParse)) { return false; }
-					} else {
-						fileList.Add(args[a]);
-					}
-				}
-				else if (Method == MethodType.NlMeansColored) {
-					if (c == "-h" && ++a < len) {
-						if (!Helpers.TryParse(args[a],c,out m2h,double.TryParse)) { return false; }
-					} else if (c == "-t" && ++a < len) {
-						if (!Helpers.TryParse(args[a],c,out m2templateWindowSize,int.TryParse)) { return false; }
-					} else if (c == "-s" && ++a < len) {
-						if (!Helpers.TryParse(args[a],c,out m2searchWindowSize,int.TryParse)) { return false; }
-					} else if (c == "-c" && ++a < len) {
-						if (!Helpers.TryParse(args[a],c,out m2hColor,double.TryParse)) { return false; }
-					} else {
-						fileList.Add(args[a]);
-					}
-				}
-				else if (Method == MethodType.Dct) {
-					if (c == "-s" && ++a < len) {
-						if (!Helpers.TryParse(args[a],c,out m3sigma,double.TryParse)) { return false; }
-					} else if (c == "-p" && ++a < len) {
-						if (!Helpers.TryParse(args[a],c,out m3psize,int.TryParse)) { return false; }
-					}
-				}
-				else if (Method == MethodType.TVL1) {
-					if (c == "-o" && ++a < len) {
-						outFile = args[a];
-					} else if (c == "-l" && ++a < len) {
-						if (!Helpers.TryParse(args[a],c,out m4lambda,double.TryParse)) { return false; }
-					} else if (c == "-n" && ++a < len) {
-						if (!Helpers.TryParse(args[a],c,out m4niters,int.TryParse)) { return false; }
-					} else {
-						fileList.Add(args[a]);
-					}
-				}
-				else if (Method == MethodType.DFTForward) {
-					if (c == "-o" && ++a < len) {
-						outFile = args[a];
-					} else {
-						fileList.Add(args[a]);
-					}
-				}
-				else if (Method == MethodType.DFTInverse) {
-					if (c == "-m" && ++a < len) {
-						if (fileList.Count < 1) {
-							fileList.Add(args[a]);
-						} else {
-							fileList[0] = args[a];
-						}
-					} else if (c == "-p" && ++a < len) {
-						if (fileList.Count < 1) {
-							fileList.Add(null);
-						}
-						fileList.Add(args[a]);
-					} else if (c == "-mi" && ++a < len) {
-						if (!Helpers.TryParse(args[a],c,out m6mi, double.TryParse)) { return false; }
-					} else if (c == "-mx" && ++a < len) {
-						if (!Helpers.TryParse(args[a],c,out m6mx, double.TryParse)) { return false; }
-					} else if (c == "-pi" && ++a < len) {
-						if (!Helpers.TryParse(args[a],c,out m6pi, double.TryParse)) { return false; }
-					} else if (c == "-px" && ++a < len) {
-						if (!Helpers.TryParse(args[a],c,out m6px, double.TryParse)) { return false; }
-					} else {
-						outFile = args[a];
-					}
-				}
-			}
 			return true;
 		}
 
-		static void MainMain()
+		static void MainMain(string[] args)
 		{
 			//not sure how beneficial this is
 			CvInvoke.RedirectError(CvInvoke.CvErrorHandlerIgnoreError,IntPtr.Zero,IntPtr.Zero);
 
-			string inFile = null;
-			inFile = fileList.FirstOrDefault();
-			if (String.IsNullOrWhiteSpace(inFile)) {
-				Console.WriteLine("Missing input file");
-				return;
-			}
-			if(String.IsNullOrEmpty(outFile))
-			{
-				if (fileList.Count > 1) {
-					outFile = fileList[1];
-				} else {
-					outFile = Path.GetFileNameWithoutExtension(inFile)
-						+".out"+Path.GetExtension(inFile);
-				}
-			}
+			//string inFile = null;
+			//inFile = fileList.FirstOrDefault();
+			//if (String.IsNullOrWhiteSpace(inFile)) {
+			//	Console.WriteLine("Missing input file");
+			//	return;
+			//}
+			//if(String.IsNullOrEmpty(outFile))
+			//{
+			//	if (fileList.Count > 1) {
+			//		outFile = fileList[1];
+			//	} else {
+			//		outFile = Path.GetFileNameWithoutExtension(inFile)
+			//			+".out"+Path.GetExtension(inFile);
+			//	}
+			//}
 
 			if (Method == MethodType.NlMeans) {
-				Methods.NlMeans(inFile,outFile,m1h,m1templateWindowSize,m1searchWindowSize);
+				var ments = NlMeansArgs.Parse(args);
+				Methods.NlMeans(ments);
 			}
 			else if (Method == MethodType.NlMeansColored) {
-				Methods.NlMeansColored(inFile,outFile,m2h,m2hColor,m2templateWindowSize,m2searchWindowSize);
+				var ments = NlMeansColoredArgs.Parse(args);
+				Methods.NlMeansColored(ments);
 			}
 			else if (Method == MethodType.Dct) {
-				if (!m3sigma.HasValue) {
+				var ments = DctArgs.Parse(args);
+				if (!ments.sigma.HasValue) {
 					Console.WriteLine("option -s is required");
 					return;
 				}
-				Methods.Dct(inFile,outFile,m3sigma.Value,m3psize);
+				Methods.Dct(ments);
 			}
 			else if (Method == MethodType.TVL1) {
-				if (!m4lambda.HasValue) {
+				var ments = TVL1Args.Parse(args);
+				if (!ments.lambda.HasValue) {
 					Console.WriteLine("option -l is required");
 					return;
 				}
-				if (!m4niters.HasValue) {
+				if (!ments.niters.HasValue) {
 					Console.WriteLine("option -n is required");
 					return;
 				}
-				Methods.TVL1(fileList,outFile,m4lambda.Value,m4niters.Value);
+				Methods.TVL1(ments);
 			}
-			else if (Method == MethodType.DFTForward) {
-				Methods.DFTForward(inFile,outFile);
-			}
-			else if (Method == MethodType.DFTInverse) {
-				if (fileList.Count < 2 || fileList[0] == null || fileList[1] == null) {
-					Console.WriteLine("your must specify both a magnitude image and a phase image");
-					return;
-				}
-				if (fileList.Count > 2) {
-					outFile = fileList[2];
-				} else {
-					outFile = Path.GetFileNameWithoutExtension(fileList[0])+".inv.png";
-				}
-
-				Debug.WriteLine("mi="+m6mi.GetValueOrDefault()
-					+" mx="+m6mx.GetValueOrDefault()
-					+" pi="+m6pi.GetValueOrDefault()
-					+" px="+m6px.GetValueOrDefault()
-				);
-
-				if (!m6mi.HasValue || !m6mx.HasValue || !m6pi.HasValue || !m6px.HasValue) {
-					Console.WriteLine("you must specify magnitude and phase ranges");
-					return;
-				}
-
-				Methods.DFTInverse(fileList,outFile,m6mi.Value,m6mx.Value,m6pi.Value,m6px.Value);
-				return;
-			}
+			//else if (Method == MethodType.DFTForward) {
+			//	Methods.DFTForward(inFile,outFile);
+			//}
+			//else if (Method == MethodType.DFTInverse) {
+			//	if (fileList.Count < 2 || fileList[0] == null || fileList[1] == null) {
+			//		Console.WriteLine("your must specify both a magnitude image and a phase image");
+			//		return;
+			//	}
+			//	if (fileList.Count > 2) {
+			//		outFile = fileList[2];
+			//	} else {
+			//		outFile = Path.GetFileNameWithoutExtension(fileList[0])+".inv.png";
+			//	}
+			//
+			//	Debug.WriteLine("mi="+m6mi.GetValueOrDefault()
+			//		+" mx="+m6mx.GetValueOrDefault()
+			//		+" pi="+m6pi.GetValueOrDefault()
+			//		+" px="+m6px.GetValueOrDefault()
+			//	);
+			//
+			//	if (!m6mi.HasValue || !m6mx.HasValue || !m6pi.HasValue || !m6px.HasValue) {
+			//		Console.WriteLine("you must specify magnitude and phase ranges");
+			//		return;
+			//	}
+			//
+			//	Methods.DFTInverse(fileList,outFile,m6mi.Value,m6mx.Value,m6pi.Value,m6px.Value);
+			//	return;
+			//}
 		}
 	}
 }

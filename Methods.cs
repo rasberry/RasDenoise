@@ -14,49 +14,49 @@ namespace RasDenoise
 {
 	static class Methods
 	{
-		public static void NlMeans(string src, string dst, double h, int templateWindowSize, int searchWindowSize)
+		public static void NlMeans(NlMeansArgs args)
 		{
-			Console.WriteLine("Reading image "+src);
-			var imgData = CvInvoke.Imread(src,ImreadModes.AnyColor);
+			Console.WriteLine("Reading image "+args.src);
+			var imgData = CvInvoke.Imread(args.src,ImreadModes.AnyColor);
 			var outData = new Mat(imgData.Size,imgData.Depth,imgData.NumberOfChannels);
 
 			Console.WriteLine("Denoising using "+nameof(NlMeans));
-			CvInvoke.FastNlMeansDenoising(imgData,outData,(float)h,templateWindowSize,searchWindowSize);
+			CvInvoke.FastNlMeansDenoising(imgData,outData,(float)args.h,args.templateWindowSize,args.searchWindowSize);
 
-			Console.WriteLine("Saving "+dst);
-			outData.Bitmap.Save(dst);
+			Console.WriteLine("Saving "+args.dst);
+			outData.Bitmap.Save(args.dst);
 		}
 
-		public static void NlMeansColored(string src, string dst, double h, double hColor, int templateWindowSize, int searchWindowSize)
+		public static void NlMeansColored(NlMeansColoredArgs args)
 		{
-			Console.WriteLine("Reading image "+src);
-			var imgData = CvInvoke.Imread(src,ImreadModes.AnyColor);
+			Console.WriteLine("Reading image "+args.src);
+			var imgData = CvInvoke.Imread(args.src,ImreadModes.AnyColor);
 			var outData = new Mat(imgData.Size,imgData.Depth,imgData.NumberOfChannels);
 
 			Console.WriteLine("Denoising using "+nameof(NlMeansColored));
-			CvInvoke.FastNlMeansDenoisingColored(imgData,outData,(float)h,(float)hColor,templateWindowSize,searchWindowSize);
+			CvInvoke.FastNlMeansDenoisingColored(imgData,outData,(float)args.h,(float)args.hColor,args.templateWindowSize,args.searchWindowSize);
 
-			Console.WriteLine("Saving "+dst);
-			outData.Bitmap.Save(dst);
+			Console.WriteLine("Saving "+args.dst);
+			outData.Bitmap.Save(args.dst);
 		}
 
-		public static void Dct(string src, string dst, double sigma, int psize)
+		public static void Dct(DctArgs args)
 		{
-			Console.WriteLine("Reading image "+src);
-			var imgData = CvInvoke.Imread(src,ImreadModes.AnyColor);
+			Console.WriteLine("Reading image "+args.src);
+			var imgData = CvInvoke.Imread(args.src,ImreadModes.AnyColor);
 			var outData = new Mat();
 		
 			Console.WriteLine("Denoising using "+nameof(Dct));
-			XPhotoInvoke.DctDenoising(imgData,outData,sigma,psize);
+			XPhotoInvoke.DctDenoising(imgData,outData,args.sigma.Value,args.psize);
 		
-			Console.WriteLine("Saving "+dst);
-			outData.Bitmap.Save(dst);
+			Console.WriteLine("Saving "+args.dst);
+			outData.Bitmap.Save(args.dst);
 		}
 
-		public static void TVL1(IEnumerable<string> srcList, string dst, double lambda, int niters)
+		public static void TVL1(TVL1Args args)
 		{
 			var observations = new List<Mat>();
-			foreach (string s in srcList)
+			foreach (string s in args.srcList)
 			{
 				Console.WriteLine("Reading image " + s);
 				var imgData = CvInvoke.Imread(s, ImreadModes.AnyColor);
@@ -65,18 +65,18 @@ namespace RasDenoise
 			var outData = new Mat();
 
 			Console.WriteLine("Denoising using " + nameof(TVL1));
-			CvInvoke.DenoiseTVL1(observations.ToArray(), outData, lambda, niters);
+			CvInvoke.DenoiseTVL1(observations.ToArray(), outData, args.lambda.Value, args.niters.Value);
 
-			Console.WriteLine("Saving " + dst);
-			outData.Bitmap.Save(dst);
+			Console.WriteLine("Saving " + args.dst);
+			outData.Bitmap.Save(args.dst);
 		}
 
-
+		#if false
 		//Followed this source code mostly
 		//https://github.com/opencv-java/fourier-transform/blob/master/src/it/polito/teaching/cv/FourierController.java
-		public static void DFTForward(string src, string dst)
+		public static void DFTForward(DFTArgs args)
 		{
-			var imgSrc = CvInvoke.Imread(src,ImreadModes.Grayscale | ImreadModes.AnyDepth);
+			var imgSrc = CvInvoke.Imread(args.src,ImreadModes.Grayscale | ImreadModes.AnyDepth);
 
 			//get optimal dimensions (power of 2 i think..)
 			int xdftsz = CvInvoke.GetOptimalDFTSize(imgSrc.Rows);
@@ -138,7 +138,7 @@ namespace RasDenoise
 			CvInvoke.Normalize(mag,magOut,0,65535,NormType.MinMax,DepthType.Cv16U);
 			CvInvoke.Normalize(phs,phsOut,0,65535,NormType.MinMax,DepthType.Cv16U);
 
-			string name = Path.GetFileNameWithoutExtension(dst);
+			string name = Path.GetFileNameWithoutExtension(args.dst);
 
 			magOut.PrintInfo("7m");
 			phsOut.PrintInfo("7p");
@@ -235,5 +235,6 @@ namespace RasDenoise
 			q2.CopyTo(q1);
 			tmp.CopyTo(q2);
 		}
+		#endif
 	}
 }
