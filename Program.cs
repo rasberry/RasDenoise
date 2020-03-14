@@ -34,7 +34,7 @@ namespace RasDenoise
 
 			//windows pops up a dialog on a crash - using try-catch to suppress that
 			try {
-				MainMain(args);
+				MainMain(args.Skip(1).ToArray());
 			} catch(SEHException se) {
 				//SEHException is annoying .. not sure how to get the 'native' underlying crash information yet.
 				Console.Error.WriteLine(se.ToString());
@@ -44,6 +44,7 @@ namespace RasDenoise
 		}
 
 		enum MethodType { None = -1, Help=0, NlMeans=1, NlMeansColored=2, Dct=3, TVL1=4, DFTForward=5, DFTInverse=6 }
+		static MethodType Method = MethodType.None;
 
 		//http://www.emgu.com/wiki/files/3.0.0/document/html/a4912b79-7f4b-b67a-1822-08e0bff036bd.htm
 		static void Usage(MethodType help = MethodType.None)
@@ -121,7 +122,13 @@ namespace RasDenoise
 					.Append    ("  ").AppendWrap(2,"Decomposes an input image into frequency magnitude and phase components.")
 					.AppendLine()
 					.Append    ("  (input image)         ").AppendWrap(24,"Source image")
-					.Append    ("  -o [output image]     ").AppendWrap(24,"Output image (produces 2 files)")
+					.AppendLine("  - forward outputs 3 files:")
+					.AppendLine("    basename.mag - magnitude part")
+					.AppendLine("    basename.phs - phase part")
+					.AppendLine("    basename.dta - text file with original magnitude and phase ranges")
+					.Append    ("  -m (file)             ").AppendWrap(24,"specify magnitude file to write")
+					.Append    ("  -p (file)             ").AppendWrap(24,"specify phase file to write")
+					.Append    ("  -d (file)             ").AppendWrap(24,"specify data file to write")
 			;}
 			if (help == MethodType.Help || help == MethodType.DFTInverse) {
 				sb
@@ -129,38 +136,16 @@ namespace RasDenoise
 					.AppendLine("  [6] DFTInverse")
 					.Append    ("  ").AppendWrap(2,"Recomposes an image from frequency magnitude and phase components.")
 					.AppendLine()
-					.Append    ("  [output image]       ").AppendWrap(24,"Output image")
-					.Append    ("  -m (input image)     ").AppendWrap(24,"Input magnitude image")
-					.Append    ("  -p (input image)     ").AppendWrap(24,"Input phase image")
-					.Append    ("  -mi (number)         ").AppendWrap(24,"magnitude range min")
-					.Append    ("  -mx (number)         ").AppendWrap(24,"magnitude range max")
-					.Append    ("  -pi (number)         ").AppendWrap(24,"phase range min")
-					.Append    ("  -px (number)         ").AppendWrap(24,"phase range max")
+					.Append    ("  (input base name)    ").AppendWrap(24,"input base file name")
+					.Append    ("  ").AppendWrap(2,"- inverse expects (basename).mag, .phs, and .dta files to exist in the same folder as basename")
+					.Append    ("  -m (file)             ").AppendWrap(24,"specify magnitude file to use")
+					.Append    ("  -p (file)             ").AppendWrap(24,"specify phase file to use")
+					.Append    ("  -d (file)             ").AppendWrap(24,"specify data file to use")
 			;}
 			}
 
 			Console.WriteLine(sb.ToString());
 		}
-
-		static MethodType Method = MethodType.None;
-		//options variables and their defaults
-		//static List<string> fileList = new List<string>();
-		//static string outFile = null;
-		//static double  m1h = 3.0;
-		//static int     m1templateWindowSize = 7;
-		//static int     m1searchWindowSize = 21;
-		//static double  m2h = 3.0;
-		//static double  m2hColor = 3.0;
-		//static int     m2templateWindowSize = 7;
-		//static int     m2searchWindowSize = 21;
-		//static double? m3sigma;
-		//static int     m3psize = 16;
-		//static double? m4lambda;
-		//static int?    m4niters;
-		//static double? m6mi;
-		//static double? m6mx;
-		//static double? m6pi;
-		//static double? m6px;
 
 		static bool ParseMethod(string[] args)
 		{
@@ -233,9 +218,10 @@ namespace RasDenoise
 				}
 				Methods.TVL1(ments);
 			}
-			//else if (Method == MethodType.DFTForward) {
-			//	Methods.DFTForward(inFile,outFile);
-			//}
+			else if (Method == MethodType.DFTForward) {
+				var ments = DFTArgs.Parse(args);
+				Methods.DFTForward(ments);
+			}
 			//else if (Method == MethodType.DFTInverse) {
 			//	if (fileList.Count < 2 || fileList[0] == null || fileList[1] == null) {
 			//		Console.WriteLine("your must specify both a magnitude image and a phase image");

@@ -127,7 +127,33 @@ namespace RasDenoise
 
 	public class DFTArgs
 	{
-		
+		public string Phs;
+		public string Mag;
+		public string Dta;
+		public string Ori;
+
+		public static DFTArgs Parse(string[] args)
+		{
+			DFTArgs o = new DFTArgs();
+			int len = args.Length;
+			for(int a=0; a<len; a++)
+			{
+				string c = args[a];
+				if (c == "-p" && ++a < len) { o.Phs = args[a]; }
+				else if (c == "-m" && ++a < len) { o.Mag = args[a]; }
+				else if (c == "-d" && ++a < len) { o.Dta = args[a]; }
+				else if (all.Ori == null) { o.Ori = c; }
+			}
+
+			if (!String.IsNullOrEmpty(o.Ori))
+			{
+				string baseFile = Helpers.GetBaseName(o.Ori);
+				if (all.Mag == null) { o.Mag = baseFile + ".mag.png"; }
+				if (all.Phs == null) { o.Phs = baseFile + ".phs.png"; }
+				if (all.Dta == null) { o.Dta = baseFile + ".dta.png"; }
+			}
+			return o;
+		}
 	}
 }
 

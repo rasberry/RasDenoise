@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace RasDenoise
 {
@@ -271,6 +272,111 @@ namespace RasDenoise
 			Mat scale = new Mat(input.Size,input.Depth,1);
 			scale.SetTo(new MCvScalar(amount));
 			CvInvoke.Add(input,scale,output);
+		}
+
+		public class NormData
+		{
+			public double MagMin;
+			public double MagMax;
+			public double PhsMin;
+			public double PhsMax;
+		}
+
+		public static bool TryReadDtaFile(string name, out Helpers.NormData[] normList)
+		{
+			if (String.IsNullOrEmpty(name)) {
+				throw new ArgumentNullException(nameof(name));
+			}
+
+			normList = null;
+			var normCollector = new List<NormData>();
+			int state = 0;
+			string[] lines = File.ReadAllLines(name);
+			//Debug.WriteLine("lines = "+lines.Length);
+
+			NormData norm = null;
+			for(int l=0; l<lines.Length; l++)
+			{
+				if (state == 0) {
+					//if (index > chanList.Length) { return false; }
+					//Debug.WriteLine("index="+index+" l= "+l);
+					norm = new NormData();
+					normCollector.Add(norm);
+				}
+
+				string line = lines[l];
+				//Debug.WriteLine("line "+l+"= "+line);
+				int sep = line.IndexOf(':');
+				//Debug.WriteLine("sep = "+sep);
+				if (sep == -1) { return false; }
+				string sval = line.Substring(sep+1);
+				//Debug.WriteLine("sval = "+sval);
+
+				double val;
+				double.TryParse(sval,out val);
+				//Debug.WriteLine(l+" val = "+sval);
+
+				switch(state)
+				{
+				case 0: norm.MagMax = val; break;
+				case 1: norm.MagMin = val; break;
+				case 2: norm.PhsMax = val; break;
+				case 3: norm.PhsMin = val; break;
+				}
+
+				state = (state + 1) % 4;
+			}
+			normList = normCollector.ToArray();
+
+			#if DEBUG
+			for(int c=0; c<normList.Length; c++) {
+				normList[c].PrintInfo("norm "+c);
+			}
+			#endif
+
+			return true;
+		}
+
+		public static void SaveDtaFile(string name, Helpers.NormData[] normList)
+		{
+			StringBuilder sb = new StringBuilder();
+			for(int c=0; c<normList.Length; c++)
+			{
+				var n = normList[c];
+				sb.AppendLine(c+":"+n.MagMax);
+				sb.AppendLine(c+":"+n.MagMin);
+				sb.AppendLine(c+":"+n.PhsMax);
+				sb.AppendLine(c+":"+n.PhsMin);
+			}
+			File.WriteAllText(GetSafeFileName(name),sb.ToString());
+		}
+
+		public static string GetSafeFileName(string name, string ensureExt = ".png")
+		{
+			string candidate = name;
+			int num = 0;
+			if (!candidate.EndsWith(ensureExt)) {
+				candidate += ensureExt;
+			}
+			while(File.Exists(candidate)) {
+				num++;
+				candidate = Path.GetFileNameWithoutExtension(name) + "." + num + ensureExt;
+			}
+			Debug.WriteLine(nameof(GetSafeFileName)+" "+ num + " " + candidate);
+			return candidate;
+		}
+
+		public static string GetBaseName(string name)
+		{
+			string baseFile = Path.GetFileNameWithoutExtension(name);
+			if (baseFile.EndsWith(".mag")
+				|| baseFile.EndsWith(".phs")
+				|| baseFile.EndsWith(".dta")
+			) {
+				baseFile = baseFile.Substring(0,-4);
+			}
+			Debug.WriteLine(nameof(GetBaseName)+" "+name+" => "+baseFile);
+			return baseFile;
 		}
 	}
 }
